@@ -1,0 +1,319 @@
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+int main(){
+    int server_socket, client_socket;
+    struct sockaddr_in server, client;
+    char buffer[1024];
+
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons(8080);
+
+    bind(server_socket, (struct sockaddr *)&server, sizeof(server));
+
+    listen(server_socket, 5);
+
+    printf("Server waiting for client...\n");
+
+    socklen_t len = sizeof(client);
+    client_socket = accept(server_socket, (struct sockaddr *)&client, &len);
+
+    printf("Client connected\n");
+
+    recv(client_socket, buffer, sizeof(buffer), 0);
+
+    printf("Client : %s\n", buffer);
+
+    strcpy(buffer, "Hello from server");
+
+    send(client_socket, buffer, strlen(buffer) + 1, 0);
+
+    close(client_socket);
+    close(server_socket);
+}
+
+....
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+int main()
+{
+    int client_socket;
+    struct sockaddr_in server;
+    char buffer[1024];
+
+    // Create socket
+    client_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+    // Server address
+    server.sin_family = AF_INET;
+    server.sin_port = htons(8080);
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    // Connect to server
+    connect(client_socket,
+            (struct sockaddr *)&server,
+            sizeof(server));
+
+    // Send message
+    strcpy(buffer, "Hello from Client");
+
+    send(client_socket, buffer, strlen(buffer) + 1, 0);
+
+    // Receive reply
+    recv(client_socket, buffer, sizeof(buffer), 0);
+
+    printf("Server: %s\n", buffer);
+
+    // Close socket
+    close(client_socket);
+
+    return 0;
+}
+
+.....
+
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+int main()
+{
+    int server_socket;
+    struct sockaddr_in server, client;
+    char buffer[1024];
+    socklen_t len;
+
+    // Create socket
+    server_socket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    // Server address
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons(8080);
+
+    // Bind socket
+    bind(server_socket,
+         (struct sockaddr *)&server,
+         sizeof(server));
+
+    printf("UDP Server waiting for message...\n");
+
+    // Receive message
+    len = sizeof(client);
+
+    recvfrom(server_socket,
+             buffer,
+             sizeof(buffer),
+             0,
+             (struct sockaddr *)&client,
+             &len);
+
+    printf("Client: %s\n", buffer);
+
+    // Send reply
+    strcpy(buffer, "Hello from UDP Server");
+
+    sendto(server_socket,
+           buffer,
+           strlen(buffer) + 1,
+           0,
+           (struct sockaddr *)&client,
+           len);
+
+    // Close socket
+    close(server_socket);
+
+    return 0;
+}
+
+....
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+int main()
+{
+    int client_socket;
+    struct sockaddr_in server;
+    char buffer[1024];
+    socklen_t len;
+
+    // Create socket
+    client_socket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    // Server address
+    server.sin_family = AF_INET;
+    server.sin_port = htons(8080);
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    // Send message
+    strcpy(buffer, "Hello from UDP Client");
+
+    len = sizeof(server);
+
+    sendto(client_socket,
+           buffer,
+           strlen(buffer) + 1,
+           0,
+           (struct sockaddr *)&server,
+           len);
+
+    // Receive reply
+    recvfrom(client_socket,
+             buffer,
+             sizeof(buffer),
+             0,
+             (struct sockaddr *)&server,
+             &len);
+
+    printf("Server: %s\n", buffer);
+
+    // Close socket
+    close(client_socket);
+
+    return 0;
+}
+
+.....
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+int main()
+{
+    int server_socket;
+    struct sockaddr_in server, client;
+    char domain[1024];
+    char ip[1024];
+    socklen_t len;
+
+    // Create UDP socket
+    server_socket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    // Server address
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons(8080);
+
+    // Bind socket
+    bind(server_socket,
+         (struct sockaddr *)&server,
+         sizeof(server));
+
+    printf("DNS Server waiting for query...\n");
+
+    // Receive domain name
+    len = sizeof(client);
+
+    recvfrom(server_socket,
+             domain,
+             sizeof(domain),
+             0,
+             (struct sockaddr *)&client,
+             &len);
+
+    printf("Client requested: %s\n", domain);
+
+    // Simple DNS table
+    if (strcmp(domain, "google.com") == 0)
+    {
+        strcpy(ip, "142.250.183.14");
+    }
+    else if (strcmp(domain, "facebook.com") == 0)
+    {
+        strcpy(ip, "157.240.241.35");
+    }
+    else if (strcmp(domain, "youtube.com") == 0)
+    {
+        strcpy(ip, "142.250.72.14");
+    }
+    else
+    {
+        strcpy(ip, "Domain not found");
+    }
+
+    // Send IP address
+    sendto(server_socket,
+           ip,
+           strlen(ip) + 1,
+           0,
+           (struct sockaddr *)&client,
+           len);
+
+    // Close socket
+    close(server_socket);
+
+    return 0;
+}
+
+......
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+int main()
+{
+    int client_socket;
+    struct sockaddr_in server;
+    char domain[1024];
+    char ip[1024];
+    socklen_t len;
+
+    // Create UDP socket
+    client_socket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    // Server address
+    server.sin_family = AF_INET;
+    server.sin_port = htons(8080);
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    // Get domain name
+    printf("Enter domain name: ");
+    scanf("%s", domain);
+
+    // Send domain name to DNS server
+    len = sizeof(server);
+
+    sendto(client_socket,
+           domain,
+           strlen(domain) + 1,
+           0,
+           (struct sockaddr *)&server,
+           len);
+
+    // Receive IP address
+    recvfrom(client_socket,
+             ip,
+             sizeof(ip),
+             0,
+             (struct sockaddr *)&server,
+             &len);
+
+    printf("IP Address: %s\n", ip);
+
+    // Close socket
+    close(client_socket);
+
+    return 0;
+}
